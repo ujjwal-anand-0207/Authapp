@@ -3,6 +3,8 @@ from rest_framework import status
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from account.serializers import UserRegistrationSerializer , UserLoginSerializer ,UserProfileSerializer
+from account.serializers import UserChangePasswordSerializer , SendPasswordResetSerializer
+from account.serializers import UserPasswordResetSerializer
 from account.renderers import UserRenderer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
@@ -52,3 +54,31 @@ class UserProfileView(APIView):
         serializer = UserProfileSerializer(request.user)
         return Response(serializer.data,status=status.HTTP_200_OK)
          
+
+class UserChangePasswordView(APIView):
+    renderer_classes=[UserRenderer]
+    permission_classes=[IsAuthenticated]
+    def post(self,request,format=None):
+        serializer = UserChangePasswordSerializer(data= request.data,
+                                                  context={'user':request.user})
+        if serializer.is_valid(raise_exception=True):
+            return Response({"msg":"password changed"},status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
+class SendPasswordResetView(APIView):
+    renderer_classes=[UserRenderer]
+    def post(self,request,format=None):
+        serializer= SendPasswordResetSerializer(data =request.data)
+        if serializer.is_valid(raise_exception=True):
+            return Response({'msg':'please check your email'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+
+class UserPasswordResetView(APIView):
+      renderer_classes= [UserRenderer]
+      def post(self,request,uid,token,format=None):
+        serializer = UserPasswordResetSerializer(data=request.data,
+                                                   context={'uid':uid,'token':token})
+        if serializer.is_valid(raise_exception=True):
+              return Response({'msg':'Password Reset Successful'},status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+              
